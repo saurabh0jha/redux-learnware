@@ -2,7 +2,7 @@
  * LIBRARY CODE
  */
 
-const createStore = () => {
+const createStore = (reducer) => {
   // The store should have four parts
   // 1. The state
   // 2. Get the state.
@@ -22,7 +22,7 @@ const createStore = () => {
   };
 
   dispatch = (action) => {
-    state = todos(state, action);
+    state = reducer(state, action);
     listeners.forEach((listener) => listener());
   };
 
@@ -33,30 +33,37 @@ const createStore = () => {
   };
 };
 
-
 // APP CODE REDUX - Reducer
 const todos = (state = [], action) => {
-    if (action.type === "ADD_TODOS") {
-      return state.concat(action.todo);
-    }
-    return state;
-  };
-  
-
+  if (action.type === "ADD_TODO") {
+    return state.concat(action.todo);
+  }
+  return state;
+};
 
 // App Code
-const store = createStore();
+const store = createStore(todos);
 
 unsubscribeStore = store.subscribe(() => {
   console.log("curent state is :", store.getState());
 });
 
 store.dispatch({
-  type: "ADD_TODOS",
+  type: "ADD_TODO",
   todo: {
-    id: 1,
-    name: "Finish Lesson 1"
+    id: 0,
+    name: "Learn Redux",
+    complete: false,
   },
 });
+
+store.dispatch({
+    type: "ADD_TODO",
+    todo: {
+      id: 0,
+      name: "Finish Chapter 1",
+      complete: false,
+    },
+  });
 
 unsubscribeStore();
