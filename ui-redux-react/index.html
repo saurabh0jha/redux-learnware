@@ -26,6 +26,7 @@
         const TOGGLE_TODO = 'TOGGLE_TODO'
         const ADD_GOAL = 'ADD_GOAL'
         const REMOVE_GOAL = 'REMOVE_GOAL'
+        const RECEIVE_DATA = 'RECEIVE_DATA'
 
         function addTodoAction(todo) {
             return {
@@ -62,18 +63,28 @@
             }
         }
 
+        function receiveDataAction(goals, todos){
+            return {
+                type: RECEIVE_DATA,
+                todos,
+                goals
+            };
+        }
+
         // APP CODE REDUX - Reducer
         const todos = (state = [], action) => {
-            if (action.type === "ADD_TODO") {
+            if (action.type === ADD_TODO) {
                 return state.concat([action.todo]);
-            } else if (action.type === "REMOVE_TODO") {
+            } else if (action.type === REMOVE_TODO) {
                 return state.filter((st) => st.id !== action.id);
-            } else if (action.type === "TOGGLE_TODO") {
+            } else if (action.type === TOGGLE_TODO) {
                 return state.map((st) =>
                     st.id === action.id
                         ? Object.assign({}, st, { complete: !st.complete })
                         : st
                 );
+            } else if (action.type === RECEIVE_DATA){
+                return action.todos
             } else {
                 return state;
             }
@@ -83,10 +94,21 @@
 
         function goals(state = [], action) {
             switch (action.type) {
-                case 'ADD_GOAL':
+                case ADD_GOAL:
                     return state.concat([action.goal])
-                case 'REMOVE_GOAL':
+                case REMOVE_GOAL:
                     return state.filter(goal => goal.id !== action.id)
+                case RECEIVE_DATA:
+                    return action.goals
+                default:
+                    return state;
+            }
+        }
+
+        function loading(state= true, action){
+            switch(action.type){
+                case RECEIVE_DATA:
+                    return false;
                 default:
                     return state;
             }
@@ -112,7 +134,8 @@
 
         store = Redux.createStore(Redux.combineReducers({
             todos,
-            goals
+            goals,
+            loading
         }), Redux.applyMiddleware(checker, logger));
 
         unsubscribeStore = store.subscribe(() => {
@@ -192,13 +215,28 @@
         class App extends React.Component {
 
             componentDidMount() {
-                this.props.store.subscribe(() => this.forceUpdate())
+                const {store} = this.props;
+
+                Promise.all([
+                    API.fetchTodos(),
+                    API.fetchGoals()
+                ]).then(([todos, goals]) => {
+                    store.dispatch(receiveDataAction(todos, goals));
+                });
+
+                store.subscribe(() => this.forceUpdate())
             }
 
             render() {
-                const store = this.props.store;
-                const { goals, todos } = store.getState();
+                const {store} = this.props;
+                const { goals, todos, loading } = store.getState();
+
+                if(loading == true){
+                    return <h3> Loading ... </h3>
+                }
+
                 return (
+
                     <div>
                         <Goals goals={goals} store={store} />
                         <Todos todos={todos} store={store} />
