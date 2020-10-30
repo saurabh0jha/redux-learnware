@@ -150,10 +150,10 @@
                 <ul>
                     {props.items.map((item) => (
                         <li key={item.id}>
-                            <span>
+                            <span style={{textDecoration: item.complete ? 'line-through' : 'none'}} onClick={() => props.toggle(item)}>
                                 {item.name}
                             </span>
-                            <button onClick={() => props.remove(item.id)}>X</button>
+                            <button onClick={() => props.remove(item)}>X</button>
                         </li>
                     ))}
                 </ul>
@@ -164,16 +164,22 @@
 
             addItem = (e) => {
                 e.preventDefault();
-                const name = this.input.value;
-                this.input.value = '';
-                this.props.store.dispatch(addGoalAction({
-                    id: generateId(),
-                    name
-                }));
+
+                API.saveGoal(this.input.value).then((goal)=>{
+                    this.props.store.dispatch(addGoalAction(goal));
+                    this.input.value = '';
+                }).catch(()=>{
+                    alert('There was an error. Please try again.');
+                })
             }
 
-            removeItem = (id) => {
-                this.props.store.dispatch(removeGoalAction(id));
+            removeItem = (goal) => {
+                this.props.store.dispatch(removeGoalAction(goal.id));
+
+                return API.deleteGoal(goal.id).catch(()=>{
+                    this.props.store.dispatch(addGoalAction(goal));
+                    alert('An Error Occured. Please Try again.');
+                });
             }
 
             render() {
@@ -190,16 +196,30 @@
 
             addItem = (e) => {
                 e.preventDefault();
-                const name = this.input.value;
-                this.input.value = '';
-                this.props.store.dispatch(addTodoAction({
-                    id: generateId(),
-                    name
-                }));
+                API.saveTodo(this.input.value).then((todo)=>{
+                    this.props.store.dispatch(addTodoAction(todo));
+                    this.input.value = '';
+                }).catch(()=>{
+                    alert('There was an error. Please try again.');
+                });
             }
 
-            removeItem = (id) => {
-                this.props.store.dispatch(removeTodoAction(id));
+            removeItem = (todo) => {
+                this.props.store.dispatch(removeTodoAction(todo.id));
+
+                return API.deleteTodo(todo.id).catch(()=>{
+                    this.props.store.dispatch(addTodoAction(todo));
+                    alert('An Error Occured. Please Try again.');
+                });
+            }
+
+            toggleTodo = (todo) => {
+                this.props.store.dispatch(toggleTodoAction(todo.id));
+
+                API.saveTodoToggle(todo.id).catch(()=>{
+                    this.props.store.dispatch(toggleTodoAction(todo.id));
+                    alert('An error occured. Please try again ...');
+                });
             }
 
             render() {
@@ -207,7 +227,7 @@
                     <h2> Todos </h2>
                     <input type="text" placeholder="Add ToDo" ref={(input) => this.input = input} />
                     <button onClick={this.addItem}>Add ToDo</button>
-                    <List items={this.props.todos} remove={this.removeItem}/>
+                    <List items={this.props.todos} remove={this.removeItem} toggle={this.toggleTodo}/>
                 </div>
             }
         }
